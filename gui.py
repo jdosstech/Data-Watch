@@ -22,8 +22,8 @@ class TokenInput(TextInput):
     def on_enter(self, value):
         print('User pressed enter in: ', self)
 
-    def on_text(self, value):
-        print('Cryptocurrency selected: ' + value)
+    def on_text(self, value, from_undo=False):
+        print('Cryptocurrency selected: ' + str(value))
 
 class MyApp(App):
     def build(self):
