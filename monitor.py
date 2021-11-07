@@ -78,6 +78,6 @@ class Monitor:
 
 # Main
 # Uncomment the next line to run
-# Monitor("bitcoin", 300, 0.01, "down", True)
+Monitor("bitcoin", 300, 0.01, "down", True)
 # Monitors bitcoin price every 5 minutes and alerts if it goes down by more than .01%, debug is True
 # Assign to a variable and destroy it when monitoring is no longer needed
