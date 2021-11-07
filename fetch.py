@@ -10,6 +10,9 @@ class Monitor:
     self.debug = debug
     self.crypto_name = crypto_name
     self.monitor_interval_secs = monitor_interval_secs
+    if(monitor_interval_secs < 60):
+      self.send_alert("Monitor interval must be at least 60 seconds")
+      self.monitor_interval_secs = 60
     self.change_percentage_range = float(change_percentage_range)
     self.change_type = change_type.lower()
     self.last_price = int(self.get_starting_price()) # float?
@@ -41,7 +44,7 @@ class Monitor:
     if current_price > self.last_price:
       percentage_change = 1 - (self.last_price / current_price)
       # Check if the price has gone up
-      if self.change_type == "up":
+      if self.change_type == "up" or self.change_type == "both":
         # Check if the price has gone up by a certain amount
         if percentage_change > self.change_percentage_range:
           # Send an alert
@@ -49,7 +52,7 @@ class Monitor:
     elif current_price < self.last_price:
       # Check if the price has gone down
       percentage_change = 1 - (current_price / self.last_price)
-      if self.change_type == "down":
+      if self.change_type == "down" or self.change_type == "both":
         # Check if the price has gone down by a certain amount
         if percentage_change  > self.change_percentage_range:
           # Send an alert
