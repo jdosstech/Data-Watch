@@ -11,7 +11,7 @@ class Monitor:
     self.crypto_name = crypto_name
     self.monitor_interval_secs = monitor_interval_secs
     if(monitor_interval_secs < 60):
-      self.send_alert("Monitor interval must be at least 60 seconds")
+      self.send_alert("Monitor interval must be at least 60 seconds, setting to 60 seconds")
       self.monitor_interval_secs = 60
     self.change_percentage_range = float(change_percentage_range)
     self.change_type = change_type.lower()
@@ -78,6 +78,6 @@ class Monitor:
 
 # Main
 # Uncomment the next line to run
-# Monitor("bitcoin", 300, 0.01, "down", True)
+# Monitor("bitcoin", 30, 0.01, "both", True)
 # Monitors bitcoin price every 5 minutes and alerts if it goes down by more than .01%, debug is True
 # Assign to a variable and destroy it when monitoring is no longer needed
