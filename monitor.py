@@ -72,7 +72,7 @@ class Monitor:
     json_data = cg.get_price(ids=cryptos.lower(), vs_currencies=currency.lower())
     try:
       return json_data[cryptos.lower()][currency.lower()]
-    except:
+    except Exception:
       self.send_alert("Invalid crypto: "+cryptos+" or currency: "+currency)
 
 
