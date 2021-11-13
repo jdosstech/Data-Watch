@@ -1,6 +1,7 @@
 import requests
 from pycoingecko import CoinGeckoAPI
 import time
+from plyer import notification
 
 # See bottom of file for how to use and try out on its own
 
@@ -10,8 +11,9 @@ class Monitor:
     self.debug = debug
     self.crypto_name = crypto_name
     self.monitor_interval_secs = monitor_interval_secs
+    # Ideally, the user will be prompted to set an interval with a minimum of 60 seconds, so monitor_interval_secs < 60 should always be false
     if(monitor_interval_secs < 60):
-      self.send_alert("Monitor interval must be at least 60 seconds, setting to 60 seconds")
+      self.error_alert("Monitor interval must be at least 60 seconds, setting to 60 seconds")
       self.monitor_interval_secs = 60
     self.change_percentage_range = float(change_percentage_range)
     self.change_type = change_type.lower()
@@ -27,7 +29,7 @@ class Monitor:
   #-----------------------------------------------------
   def get_starting_price(self):
     starting_price = self.get_crypto_price_cg(self.crypto_name)
-    self.send_alert("Starting price: "+str(starting_price))
+    self.alert_user("Starting price for "+self.crypto_name+": "+str(starting_price))
     return starting_price
 
   def run(self):
@@ -39,7 +41,7 @@ class Monitor:
   def update(self):
     # Get the current price
     current_price = int(self.get_crypto_price_cg(self.crypto_name))
-    self.send_alert("Current price: "+str(current_price))
+    self.alert_user("Current price for "+self.crypto_name+": "+str(current_price))
     # Check if the price has changed
     if current_price > self.last_price:
       percentage_change = 1 - (self.last_price / current_price)
@@ -48,7 +50,7 @@ class Monitor:
         # Check if the price has gone up by a certain amount
         if percentage_change > self.change_percentage_range:
           # Send an alert
-          self.send_alert("Price went up by "+str(percentage_change)+"%")
+          self.alert_user("Price of "+self.crypto_name+" went up by "+str(percentage_change)+"%")
     elif current_price < self.last_price:
       # Check if the price has gone down
       percentage_change = 1 - (current_price / self.last_price)
@@ -56,14 +58,21 @@ class Monitor:
         # Check if the price has gone down by a certain amount
         if percentage_change  > self.change_percentage_range:
           # Send an alert
-          self.send_alert("Price went down by "+str(percentage_change)+"%")
+          self.alert_user("Price of "+self.crypto_name+" went down by "+str(percentage_change)+"%")
     # Update the last price
     self.last_price = current_price
 
   #-----------------------------------------------------
-  def send_alert(self, message):
+  def error_alert(self, message):
     if self.debug:
       print(message)
+
+  #-----------------------------------------------------
+  def alert_user(self, message):
+    # The title parameter should be used to specify a title for the notification 
+    # The app_name parameter is currently set to Python no matter what
+    # The app_icon parameter can be used to specify an icon (must be a .ICO file on Windows)
+    notification.notify(app_name='Data Watch', message=message)
 
   #-----------------------------------------------------
   def get_crypto_price_cg(self,cryptos="bitcoin",currency="usd"):
@@ -73,11 +82,11 @@ class Monitor:
     try:
       return json_data[cryptos.lower()][currency.lower()]
     except:
-      self.send_alert("Invalid crypto: "+cryptos+" or currency: "+currency)
+      self.error_alert("Invalid crypto: "+cryptos+" or currency: "+currency)
 
 
 # Main
-# Uncomment the next line to run
-# Monitor("bitcoin", 30, 0.01, "both", True)
+if __name__ == "__main__":
+  Monitor("bitcoin", 30, 0.01, "both", True)
 # Monitors bitcoin price every 5 minutes and alerts if it goes down by more than .01%, debug is True
 # Assign to a variable and destroy it when monitoring is no longer needed
