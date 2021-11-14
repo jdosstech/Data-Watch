@@ -69,7 +69,7 @@ class Monitor:
 
   #-----------------------------------------------------
   def alert_user(self, message):
-    # The title parameter should be used to specify a title for the notification 
+    # The title parameter should be used to specify a title for the notification
     # The app_name parameter is currently set to Python no matter what
     # The app_icon parameter can be used to specify an icon (must be a .ICO file on Windows)
     notification.notify(app_name='Data Watch', message=message)
@@ -81,7 +81,7 @@ class Monitor:
     json_data = cg.get_price(ids=cryptos.lower(), vs_currencies=currency.lower())
     try:
       return json_data[cryptos.lower()][currency.lower()]
-    except:
+    except Exception:
       self.error_alert("Invalid crypto: "+cryptos+" or currency: "+currency)
 
 
