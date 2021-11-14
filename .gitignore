@@ -1,0 +1,5 @@
+.vscode
+.atom
+.DS_Store
+
+__pycache__/
