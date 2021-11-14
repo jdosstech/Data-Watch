@@ -1,13 +1,9 @@
 import wx
 
 class SelectionFrame(wx.Frame):
-    def __init__(self, *args, **kw):
+    def __init__(self):
         style = wx.DEFAULT_FRAME_STYLE & (~wx.MAXIMIZE_BOX) & (~wx.MINIMIZE_BOX) # Hide the maximize and minimize buttons on the window
-        super(SelectionFrame, self).__init__(*args, **kw, style=style)
-        self.SetSize(size=(620, 420))
-        self.SetTitle('Data Watch - Selection Screen')
-        #super(SelectionFrame, self).__init__(self, None, title='Data Watch Selection Screen' size=(420, 680))
-        #wx.Frame.__init__(self, None, title='Data Watch Selection Screen' size=(420, 680))
+        wx.Frame.__init__(self, None, wx.ID_ANY, title='Data Watch - Selection Screen', pos=wx.DefaultPosition, size=(620, 420), style=style)
 
         self.SetBackgroundColour(wx.TheColourDatabase.Find('WHITE'))
 
@@ -46,6 +42,6 @@ class SelectionFrame(wx.Frame):
 
 if __name__ == '__main__':
     app = wx.App()
-    frm = SelectionFrame(None)
+    frm = SelectionFrame()
     frm.Show()
     app.MainLoop()        
