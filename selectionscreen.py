@@ -6,7 +6,7 @@ class SelectionFrame(wx.Frame):
         style = wx.DEFAULT_FRAME_STYLE & (~wx.MAXIMIZE_BOX) & (~wx.MINIMIZE_BOX) & (~wx.RESIZE_BORDER) # Hide the maximize and minimize buttons and make the window non-resizable
         wx.Frame.__init__(self, None, wx.ID_ANY, title='Data Watch - Selection Screen', pos=wx.DefaultPosition, size=(620, 420), style=style)
 
-        self.SetBackgroundColour(wx.TheColourDatabase.Find('WHITE'))
+        #self.SetBackgroundColour(wx.TheColourDatabase.Find('WHITE'))
 
         pnl = wx.Panel(self)
 

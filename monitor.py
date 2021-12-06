@@ -2,65 +2,108 @@ import requests
 from pycoingecko import CoinGeckoAPI
 import time
 from plyer import notification
+import pymongo
+import logging
+import threading
+import time
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # See bottom of file for how to use and try out on its own
 
 class Monitor:
 
-  def __init__(self, crypto_name, monitor_interval_secs, change_percentage_range, change_type, debug=False):
+  def __init__(self, debug=False):
     self.debug = debug
-    self.crypto_name = crypto_name
-    self.monitor_interval_secs = monitor_interval_secs
-    # Ideally, the user will be prompted to set an interval with a minimum of 60 seconds, so monitor_interval_secs < 60 should always be false
-    if(monitor_interval_secs < 60):
-      self.error_alert("Monitor interval must be at least 60 seconds, setting to 60 seconds")
-      self.monitor_interval_secs = 60
-    self.change_percentage_range = float(change_percentage_range)
-    self.change_type = change_type.lower()
-    self.last_price = int(self.get_starting_price()) # float?
-    self.run()
-
+    m_creds = os.getenv("MONGO_CREDS")
+    # https://cloud.mongodb.com/v2/599107153b34b97bd19035e5#serverless/explorer/DataWatch/DataWatch/cryptos/find
+    self.myclient = pymongo.MongoClient("mongodb+srv://"+m_creds+"@datawatch.7je0a.mongodb.net/DataWatch?retryWrites=true&w=majority")
+    self.mydb = self.myclient["DataWatch"]
+    self.cryptos_monitor_rules_col = self.mydb["cryptos_monitor_rules"]
+    self.cryptos_history_col = self.mydb["cryptos_history"]
+    self.x = threading.Thread(target=self.run)
+    self.x.start()
+    
   constructor = __init__
 
-  #-----------------------------------------------------
-  # Functions
-  #-----------------------------------------------------
+  def add(self, crypto_name, monitor_interval_secs, change_percentage_range, change_type):
+    # Ideally, the user will be prompted to set an interval with a minimum of 60 seconds, so monitor_interval_secs < 60 should always be false
+    local_monitor_interval_secs = monitor_interval_secs
+    if(monitor_interval_secs < 60):
+      self.error_alert("Monitor interval must be at least 60 seconds, setting to 60 seconds")
+      local_monitor_interval_secs = 60
+  
+    latest_price = int(self.get_starting_price(crypto_name)) # float?
+    if latest_price == -1:
+      self.error_alert("Could not get starting price for "+crypto_name)
+      return
+
+    self.cryptos_monitor_rules_col.find_one_and_delete({"crypto_name": crypto_name})
+    self.cryptos_monitor_rules_col.insert_one({"crypto_name": crypto_name,
+                                         "monitor_interval_secs": local_monitor_interval_secs,
+                                         "change_percentage_range": float(change_percentage_range),
+                                         "change_type": change_type.lower(),
+                                         "previous_price": 0,
+                                         "latest_price": latest_price,
+                                         "last_checked": time.time()})
 
   #-----------------------------------------------------
-  def get_starting_price(self):
-    starting_price = self.get_crypto_price_cg(self.crypto_name)
-    self.alert_user("Starting price for "+self.crypto_name+": "+str(starting_price))
-    return starting_price
-
+  # Thread
+  #-----------------------------------------------------
   def run(self):
     while True:
-      time.sleep(self.monitor_interval_secs)
-      self.update()
+      for crypto in self.cryptos_monitor_rules_col.find():
+        cur_time = time.time()
+        if (cur_time - int(crypto["last_checked"])) >= (int(crypto["monitor_interval_secs"])):
+          self.update(crypto, cur_time)
+      time.sleep(10)
 
   #-----------------------------------------------------
-  def update(self):
+  def get_starting_price(self, crypto_name="bitcoin"): #remove default TODO
+    starting_price = self.get_crypto_price_cg(crypto_name)
+    return starting_price
+
+  #-----------------------------------------------------
+  def update(self, crypto, update_time):
     # Get the current price
-    current_price = int(self.get_crypto_price_cg(self.crypto_name))
-    self.alert_user("Current price for "+self.crypto_name+": "+str(current_price))
+    current_price = int(self.get_crypto_price_cg(crypto["crypto_name"]))
     # Check if the price has changed
-    if current_price > self.last_price:
-      percentage_change = 1 - (self.last_price / current_price)
+    if current_price > crypto["latest_price"]:
+      percentage_change = 1 - (crypto["latest_price"] / current_price)
       # Check if the price has gone up
-      if self.change_type == "up" or self.change_type == "both":
+      if crypto["change_type"] == "up" or crypto["change_type"] == "both":
         # Check if the price has gone up by a certain amount
-        if percentage_change > self.change_percentage_range:
+        if percentage_change > crypto["change_percentage_range"]:
           # Send an alert
-          self.alert_user("Price of "+self.crypto_name+" went up by "+str(percentage_change)+"%")
-    elif current_price < self.last_price:
+          self.alert_user("Price of "+crypto["crypto_name"]+" went up by "+str(percentage_change)+"%")
+          
+          self.cryptos_history_col.insert_one({"crypto_name": crypto["crypto_name"],
+                                               "price": current_price,
+                                               "change_percentage": percentage_change,
+                                               "change_type": crypto["change_type"],
+                                               "time": time.time()})
+    elif current_price < crypto["latest_price"]:
       # Check if the price has gone down
-      percentage_change = 1 - (current_price / self.last_price)
-      if self.change_type == "down" or self.change_type == "both":
+      percentage_change = 1 - (current_price / crypto["latest_price"])
+      if crypto["change_type"] == "down" or crypto["change_type"] == "both":
         # Check if the price has gone down by a certain amount
-        if percentage_change  > self.change_percentage_range:
+        if percentage_change  > crypto["change_percentage_range"]:
           # Send an alert
-          self.alert_user("Price of "+self.crypto_name+" went down by "+str(percentage_change)+"%")
-    # Update the last price
-    self.last_price = current_price
+          self.alert_user("Price of "+crypto["crypto_name"]+" went down by "+str(percentage_change)+"%")
+          
+          self.cryptos_history_col.insert_one({"crypto_name": crypto["crypto_name"],
+                                               "price": current_price,
+                                               "change_percentage": percentage_change,
+                                               "change_type": crypto["change_type"],
+                                               "time": time.time()})
+
+    self.cryptos_monitor_rules_col.update_one({"crypto_name": crypto["crypto_name"]},
+                                              {"$set": {"latest_price": current_price,
+                                                        "previous_price": crypto["latest_price"],
+                                                        "last_checked": update_time}})
+
 
   #-----------------------------------------------------
   def error_alert(self, message):
@@ -72,7 +115,8 @@ class Monitor:
     # The title parameter should be used to specify a title for the notification
     # The app_name parameter is currently set to Python no matter what
     # The app_icon parameter can be used to specify an icon (must be a .ICO file on Windows)
-    notification.notify(app_name='Data Watch', message=message)
+    #notification.notify(app_name='Data Watch', message=message)
+    print(message)
 
   #-----------------------------------------------------
   def get_crypto_price_cg(self,cryptos="bitcoin",currency="usd"):
@@ -83,10 +127,12 @@ class Monitor:
       return json_data[cryptos.lower()][currency.lower()]
     except Exception:
       self.error_alert("Invalid crypto: "+cryptos+" or currency: "+currency)
+      return -1
 
 
 # Main
 if __name__ == "__main__":
-  Monitor("bitcoin", 30, 0.01, "both", True)
+  theMon = Monitor(True)
+  theMon.add("bitcoin", 30, 0.01, "both")
 # Monitors bitcoin price every 5 minutes and alerts if it goes down by more than .01%, debug is True
 # Assign to a variable and destroy it when monitoring is no longer needed
