@@ -89,7 +89,8 @@ class Monitor:
                                                 "previous_price": crypto["latest_price"],
                                                 "current_price": current_price,
                                                 "change_percentage": percentage_change,
-                                                "time": time.time()
+                                                "time": time.time(),
+                                                "monitor_rule_id": crypto["_id"]
                                               })
     elif current_price < crypto["latest_price"]:
       # Check if the price has gone down
@@ -105,7 +106,8 @@ class Monitor:
                                                 "previous_price": crypto["latest_price"],
                                                 "current_price": current_price,
                                                 "change_percentage": percentage_change,
-                                                "time": time.time()
+                                                "time": time.time(),
+                                                "monitor_rule_id": crypto["_id"]
                                               })
 
     self.cryptos_monitor_rules_col.update_one({ "crypto_name": crypto["crypto_name"],
@@ -147,9 +149,10 @@ class Monitor:
 # Main
 if __name__ == "__main__":
   theMon = Monitor(True)
-  theMon.add("bitcoin", 30, 0.01, "both")
+  theMon.add("bitcoin", 60, 0.001, "both")
   theMon.add("bitcoin", 300, 0.01, "both")
-  theMon.add("ethereum", 900, 0.02, "both")
-  theMon.add("ethereum", 90, 0.002, "both")
+  theMon.add("bitcoin", 3600, 0.1, "both")
+  theMon.add("ethereum", 60, 0.001, "both")
+  theMon.add("ethereum", 300, 0.01, "both")
+  theMon.add("ethereum", 3600, 0.1, "both")
 # Monitors bitcoin price every 5 minutes and alerts if it goes down by more than .01%, debug is True
-# Assign to a variable and destroy it when monitoring is no longer needed
