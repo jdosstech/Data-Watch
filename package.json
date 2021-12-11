@@ -1,0 +1,13 @@
+{
+  "name": "data-watch",
+  "version": "1.0.0",
+  "main": "main.js",
+  "repository": "https://github.com/jdosstech/Data-Watch.git",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "electron": "^16.0.4"
+  }
+}
