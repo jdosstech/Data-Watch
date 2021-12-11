@@ -1,4 +1,6 @@
 import requests
+import json
+from flask import Flask, request
 from pycoingecko import CoinGeckoAPI
 import time
 from plyer import notification
@@ -8,6 +10,8 @@ import threading
 import time
 import os
 from dotenv import load_dotenv
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
 
 load_dotenv()
 
@@ -145,7 +149,34 @@ class Monitor:
       self.error_alert("Invalid crypto: "+cryptos+" or currency: "+currency)
       return -1
 
+app   = Flask(__name__)
+store = {}
 
+@app.route('/')
+def index():
+  return 'Index', 200
+
+@app.route('/set', methods = ['POST'])
+def set():
+  for key, value in request.args.items():
+    store[key] = value
+  return f'{json.dumps(store, indent = 2)}\n', 200
+
+@app.route('/get', methods = ['GET'])
+def get():
+  key = request.args.get('key', default=None, type=str)
+  if key and key in store:
+    return f'{key} = {store[key]}\n'
+  return 'Key not found.\n', 404
+
+@app.route('/remove', methods = ['DELETE'])
+def remove():
+  key = request.args.get('key', default=None, type=str)
+  if key and key in store:
+    del store[key]
+    return f'{json.dumps(store, indent = 2)}\n', 200
+  return 'Key not found.\n', 404
+    
 # Main
 if __name__ == "__main__":
   theMon = Monitor(True)
@@ -156,3 +187,7 @@ if __name__ == "__main__":
   theMon.add("ethereum", 300, 0.01, "both")
   theMon.add("ethereum", 3600, 0.1, "both")
 # Monitors bitcoin price every 5 minutes and alerts if it goes down by more than .01%, debug is True
+  app.run(host='0.0.0.0', port=8000)
+
+
+

@@ -1,0 +1,7 @@
+requests
+pycoingecko
+plyer
+pymongo
+python-dotenv
+dnspython
+flask
