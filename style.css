@@ -3,17 +3,25 @@
     padding: 0px;
     list-style: none;
     text-decoration: none;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
 }
 
 .selection-screen {
     font-size: 14px;
-    /*height: 30px;*/
-    width: 100px;
+    height: 24px;
+    width: 120px;
     margin: 3px;
     text-align: center;
     display: grid;
-    grid-template-rows: 2em;
-    grid-template-columns: 1fr auto;
-    /*border-width: 0px;*/
-    vertical-align: middle;
+    box-sizing: border-box;
+    border-width: 1px;
+    border-radius: 0px;
 }

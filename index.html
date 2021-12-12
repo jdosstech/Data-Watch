@@ -2,11 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <script defer src="render.js"></script>
     <title>Data Watch &#8212; Selection Screen</title>
 </head>
 <body>
-    <input class="selection-screen" type="text" id="crypto" placeholder="Crypto">
-    <input class="selection-screen" type="submit" value="Watch">
+    <div>
+        <input class="selection-screen" type="text" id="input-box" oninput="onInputBoxUpdate()" placeholder="Crypto">
+        <input class="selection-screen" type="submit" value="Watch">
+    </div>
 </body>
 </html>
