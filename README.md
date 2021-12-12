@@ -17,7 +17,20 @@ Finally, to build and run Data Watch, run the command:
 
 > yarn start
 
-## Build and Run the Docker Image
+## Build and Run the Backend
+
+### Development (no Docker)
+
+To install the required python backend packages
+
+> python3  -m pip install --no-cache-dir --upgrade pip && \
+  python3  -m pip install --no-cache-dir -r backend/requirements.txt
+
+There may be PATH additions required
+
+To run the backend in dev mode
+> /usr/bin/python3 backend/monitor.py
+### Docker Image
 
 To build the Docker image, run the following command (this example uses the name `simple_server`, but you can name it whatever you want):
 
