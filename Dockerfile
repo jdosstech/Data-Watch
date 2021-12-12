@@ -2,7 +2,7 @@ FROM python:3.8.2
 
 ENV SRC_DIR /app
 
-COPY * ${SRC_DIR}/
+COPY backend/* ${SRC_DIR}/
 
 WORKDIR ${SRC_DIR}
 
