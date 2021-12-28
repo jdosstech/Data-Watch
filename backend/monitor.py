@@ -1,6 +1,6 @@
 import requests
 import json
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from pycoingecko import CoinGeckoAPI
 import time
 from plyer import notification
@@ -42,7 +42,7 @@ class Monitor:
     latest_price = int(self.get_starting_price(crypto_name)) # float?
     if latest_price == -1:
       self.error_alert("Could not get starting price for "+crypto_name)
-      return -1
+      return
 
     self.cryptos_monitor_rules_col.find_one_and_delete({  "crypto_name": crypto_name,
                                                           "monitor_interval_secs": local_monitor_interval_secs,
@@ -57,20 +57,6 @@ class Monitor:
                                                 "latest_price": latest_price,
                                                 "last_checked": time.time()
                                               })
-
-
-  def get_crypto_price_cm(self,cryptos="bitcoin",currency="usd"):
-    from coinmarketcap import Market
-    cm = Market()
-    json_data = cm.ticker(cryptos.lower(), currency.lower())
-    try:
-      return json_data[0]['price_'+currency.lower()]
-    except Exception:
-      self.error_alert("Invalid crypto: "+cryptos+" or currency: "+currency)
-      return -1
-
-  def get_all_crypto_monitors(self):
-    return list(self.cryptos_monitor_rules_col.find())
 
   #-----------------------------------------------------
   # Thread
@@ -143,7 +129,7 @@ class Monitor:
   def error_alert(self, message):
     if self.debug:
       print(message)
-  
+
   #-----------------------------------------------------
   def alert_user(self, message):
     # The title parameter should be used to specify a title for the notification
@@ -164,31 +150,24 @@ class Monitor:
       return -1
 
 app   = Flask(__name__)
-store = {"key": "value"}
+store = {}
 
 @app.route('/')
 def index():
   return 'Index', 200
 
-@app.route('/cryptos/monitors', methods = ['POST', 'GET'])
-def add_crypto_monitor():
-  if request.method == 'POST':  
-    crypto_name = request.args.get('crypto_name', default=None, type=str)
-    change_type = request.args.get('change_type', default=None, type=str)
-    change_percentage_range = request.args.get('change_percentage_range', default=None, type=float)
-    monitor_interval_secs = request.args.get('monitor_interval_secs', default=None, type=int)
+@app.route('/set', methods = ['POST'])
+def set():
+  for key, value in request.args.items():
+    store[key] = value
+  return f'{json.dumps(store, indent = 2)}\n', 200
 
-    if crypto_name == None or monitor_interval_secs == None or change_percentage_range == None or change_type == None:
-      return "Error: Missing parameters", 400
-    else:
-      if theMon.add(crypto_name, monitor_interval_secs, change_percentage_range, change_type) == -1:
-        return "Error: Could not find " + crypto_name, 400
-      else:
-        return "Success", 200
-  elif request.method == 'GET':
-    return jsonify(theMon.get_all_crypto_monitors()), 200
-  else:
-    return "Error: Invalid request", 400
+@app.route('/get', methods = ['GET'])
+def get():
+  key = request.args.get('key', default=None, type=str)
+  if key and key in store:
+    return f'{key} = {store[key]}\n'
+  return 'Key not found.\n', 404
 
 @app.route('/remove', methods = ['DELETE'])
 def remove():
@@ -199,8 +178,15 @@ def remove():
   return 'Key not found.\n', 404
     
 # Main
-if __name__ == '__main__':
+if __name__ == "__main__":
   theMon = Monitor(True)
+  theMon.add("bitcoin", 60, 0.001, "both")
+  theMon.add("bitcoin", 300, 0.01, "both")
+  theMon.add("bitcoin", 3600, 0.1, "both")
+  theMon.add("ethereum", 60, 0.001, "both")
+  theMon.add("ethereum", 300, 0.01, "both")
+  theMon.add("ethereum", 3600, 0.1, "both")
+# Monitors bitcoin price every 5 minutes and alerts if it goes down by more than .01%, debug is True
   app.run(host='0.0.0.0', port=8000)
 
 
