@@ -30,16 +30,16 @@ There may be PATH additions required
 
 To run the backend in dev mode
 > /usr/bin/python3 backend/monitor.py
-### Docker Image
+### Docker Image (Not currently working)
 
-To build the Docker image, run the following command (this example uses the name `simple_server`, but you can name it whatever you want):
+To build the Docker image, run the following command with docker running on your machine (this example uses the name `data_watch`, but you can name it whatever you want):
 
-> docker build . -t simple_server
+> docker build . -t data_watch
 
 To run the container, use the command:
 
-> docker run -p 8000:8000 simple_server
+> docker run -p 8000:8000 data_watch
 
 To run it in the background, add the `-d` flag:
 
-> docker run -d -p 8000:8000 simple_server
+> docker run -d -p 8000:8000 data_watch

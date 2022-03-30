@@ -11,6 +11,8 @@ import time
 import os
 from dotenv import load_dotenv
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import pync
+from coinmarketcap import Market
 
 
 load_dotenv()
@@ -60,7 +62,6 @@ class Monitor:
 
 
   def get_crypto_price_cm(self,cryptos="bitcoin",currency="usd"):
-    from coinmarketcap import Market
     cm = Market()
     json_data = cm.ticker(cryptos.lower(), currency.lower())
     try:
@@ -70,7 +71,10 @@ class Monitor:
       return -1
 
   def get_all_crypto_monitors(self):
-    return list(self.cryptos_monitor_rules_col.find())
+    return list(self.cryptos_monitor_rules_col.find({},{"_id": 0}))
+
+  def get_all_crypto_history(self):
+    return list(self.cryptos_history_col.find({},{"_id": 0, 'monitor_rule_id': 0}))
 
   #-----------------------------------------------------
   # Thread
@@ -150,6 +154,14 @@ class Monitor:
     # The app_name parameter is currently set to Python no matter what
     # The app_icon parameter can be used to specify an icon (must be a .ICO file on Windows)
     #notification.notify(app_name='Data Watch', message=message)
+    #pync.notify('Hello World')
+    #pync.notify('Hello World', title='Python')
+    #pync.notify('Hello World', group=os.getpid())
+    #pync.notify('Hello World', activate='com.apple.Safari')
+    #pync.notify('Hello World', open='http://github.com/')
+    # Going to have to use different approaches per OS: https://www.pythongasm.com/desktop-notifications-with-python/
+    pync.notify('Hello World', execute='say "OMG"')
+
     print(message)
 
   #-----------------------------------------------------
@@ -162,6 +174,28 @@ class Monitor:
     except Exception:
       self.error_alert("Invalid crypto: "+cryptos+" or currency: "+currency)
       return -1
+  #-----------------------------------------------------
+  # Has errors on loading lybcrypto module
+  #def get_wallet_data(self, wallet_addr):
+  # ethereum -> https://docs.etherscan.io/api-endpoints/tokens
+
+
+  #-----------------------------------------------------
+  def get_stock_price_cm(self,stocks="AAPL",currency="usd"):
+    cm = Market()
+    json_data = cm.ticker(stocks.lower(), currency.lower())
+    try:
+      return json_data[0]['price_'+currency.lower()]
+    except Exception:
+      self.error_alert("Invalid stock: "+stocks+" or currency: "+currency)
+      return -1
+  
+
+# End Class Monitor
+#-----------------------------------------------------
+
+#-----------------------------------------------------
+# Web Server
 
 app   = Flask(__name__)
 store = {"key": "value"}
@@ -170,8 +204,12 @@ store = {"key": "value"}
 def index():
   return 'Index', 200
 
+@app.route('/cryptos/history', methods = ['GET'])
+def crypto_history():
+  return json.dumps(theMon.get_all_crypto_history()), 200
+
 @app.route('/cryptos/monitors', methods = ['POST', 'GET'])
-def add_crypto_monitor():
+def crypto_monitor():
   if request.method == 'POST':  
     crypto_name = request.args.get('crypto_name', default=None, type=str)
     change_type = request.args.get('change_type', default=None, type=str)
@@ -186,7 +224,7 @@ def add_crypto_monitor():
       else:
         return "Success", 200
   elif request.method == 'GET':
-    return jsonify(theMon.get_all_crypto_monitors()), 200
+    return json.dumps(theMon.get_all_crypto_monitors()), 200
   else:
     return "Error: Invalid request", 400
 
@@ -198,6 +236,7 @@ def remove():
     return f'{json.dumps(store, indent = 2)}\n', 200
   return 'Key not found.\n', 404
     
+#-----------------------------------------------------
 # Main
 if __name__ == '__main__':
   theMon = Monitor(True)
